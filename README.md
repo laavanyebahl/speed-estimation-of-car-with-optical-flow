@@ -36,6 +36,8 @@ I wrote the following 2 programs :
 * **Train using only optical flow frame:** Network gave very good loss, but required more EPOCHS
 * **Train using both original video + optical flow frame (0.1 x original_video  + optical_flow):** The newtork gave the least loss and least EPOCHS.
 
+2nd approach gives the most realistic resuts on the test video.
+
 __Model__
 
 Following model is used in **model.py:**
@@ -53,10 +55,12 @@ def CNNModel():
     model.add(ELU())
     model.add(Convolution2D(64, 3, 3, subsample= (1,1), border_mode = 'valid', init = 'he_normal'))
     model.add(Flatten())
+    model.add(Dropout(0.5))
     model.add(ELU())
     model.add(Dense(100, init = 'he_normal'))
     model.add(ELU())
     model.add(Dense(50, init = 'he_normal'))
+    model.add(Dropout(0.5))
     model.add(ELU())
     model.add(Dense(10, init = 'he_normal'))
     model.add(ELU())
@@ -74,10 +78,10 @@ We take 4 consecutive images and calculate the average optical flow to remove an
 
 In **train_model.py:** we have the following two functions:
 * prepareData() :  Stores the paths of 4 consecutive optical flow frames + the path of the original frame
-* generateData() :  Generator funciton which loads the images from the path, makes a single train image from 4 consecutives frames and orginal image and feeds it into the network in batches by using yield
+* generateData() :  Generator funciton which loads the images from the path, makes a single train image from 4 consecutive frames and orginal image and feeds it into the network in batches by using yield.
 
 __Data Augmentation__  
-In the generateData() function we double the data for training by simply flipping the combined ttrain images and adding it in the batch along with the same label.
+In the generateData() function we double the data for training by simply flipping the train images and adding it in the batch along with the same label.
 
 __Training Log and Graph__   
 
@@ -119,14 +123,15 @@ For testing we convert to Optical flow on the go and take the average of the pre
 
 # Early stopping   
 
-I used the kears eraly stopping feature to stop the network when it starts overfirring.
-I define the patience as 3. That means it looks for 3 more epochs for improvement in validationn loss other wise it stops the trainign if it does not improvve and saves the mode with the best validatoin loss.
+I used the keras eraly stopping feature to stop the network when it starts overfitting.
+I define the patience as 2. That means it looks for 2 more epochs for improvement in validationn loss otherwise it stops the training if it does not improve and saves the model with the best validation loss.
 Here, the network is stopped at 13th epoch.
 
 # Output visualization
-We can see the optical glow overlayed on th prigin al video image  below.
+We can see the output video and the optical flow overlayed on the original video image  below.
 
 ![out](/output/out.gif)
+
 ![out_opt](/output/out_flow.gif)
 
 
