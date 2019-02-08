@@ -1,0 +1,5 @@
+data/test_images/
+data/test_images_flow/
+data/train_images/
+data/train_images_flow/
+data/*.mp4
