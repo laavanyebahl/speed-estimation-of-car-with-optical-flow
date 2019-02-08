@@ -4,7 +4,7 @@ The aim of  this project is to predict the speed of a moving car with just a fro
 The video is challenging because of the lighting conditions. 
 
 The input looks like this:
-![in](/output/in.gif)
+![in](/output/input.gif)
 
 
 First one can think of a general approach of training a CNN with the images and the labeled data. But, then if we train with the original frame from the video for regression and predicting the speed, the model will simply overfit, because it will try to memorize evry image with a speed value. 
@@ -129,7 +129,7 @@ Here, the network is stopped at 13th epoch.
 We can see the optical glow overlayed on th prigin al video image  below.
 
 ![out](/output/out.gif)
-![out_opt](/output/out_opt.gif)
+![out_opt](/output/out_flow.gif)
 
 
 
