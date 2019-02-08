@@ -1,3 +1,6 @@
+# from model2 import CNNModel
+from model import CNNModel
+
 import cv2
 import numpy as np
 import os, sys
@@ -14,9 +17,6 @@ from keras.layers import Flatten, Dense, Lambda, Convolution2D, Cropping2D, Drop
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 from PIL import Image
-
-# from model import CNNModel
-from model3 import CNNModel
 from frames_to_opticalFlow import convertToOptical
 
 PATH_DATA_FOLDER = './data/'
@@ -28,9 +28,11 @@ TYPE_FLOW_PRECOMPUTED = 0
 TYPE_ORIGINAL = 1
 
 BATCH_SIZE = 128
-EPOCH = 100
+EPOCH = 50
 
-MODEL_NAME = 'CNNModel_flow_3'
+# MODEL_NAME = 'CNNModel_flow'
+MODEL_NAME = 'CNNModel_combined'
+
 
 def prepareData(labels_path, images_path, flow_images_path, type=TYPE_FLOW_PRECOMPUTED):
     num_train_labels = 0
@@ -40,13 +42,13 @@ def prepareData(labels_path, images_path, flow_images_path, type=TYPE_FLOW_PRECO
     with open(labels_path) as txt_file:
         labels_string = txt_file.read().split()
 
-        for i in range(1, len(labels_string)):
+        for i in range(4, len(labels_string)):
             speed = float(labels_string[i])
             train_labels.append(speed)
 
             if type == TYPE_FLOW_PRECOMPUTED:
                 # Combine original and pre computed optical flow
-                train_images_pair_paths.append( ( os.getcwd() + images_path[1:] + str(i)+ '.jpg',  os.getcwd() + flow_images_path[1:] + str(i-1) + '.jpg') )
+                train_images_pair_paths.append( ( os.getcwd() + images_path[1:] + str(i)+ '.jpg',  os.getcwd() + flow_images_path[1:] + str(i-3) + '.jpg',   os.getcwd() + flow_images_path[1:] + str(i-2) + '.jpg',   os.getcwd() + flow_images_path[1:] + str(i-1) + '.jpg',  os.getcwd() + flow_images_path[1:] + str(i) + '.jpg') )
             else:
                 # Combine 2 consecutive frames and calculate optical flow
                 train_images_pair_paths.append( ( os.getcwd() + images_path[1:] + str(i-1)+ '.jpg',  os.getcwd() + images_path[1:] + str(i) + '.jpg') )
@@ -66,13 +68,16 @@ def generatorData(samples, batch_size=32, type=TYPE_FLOW_PRECOMPUTED):
             for imagePath, measurement in batch_samples:
 
                 combined_image = None
+                flow_image_bgr = None
 
                 if type == TYPE_FLOW_PRECOMPUTED:
-                    curr_image_path, flow_image_path = imagePath
-                    # print(curr_image_path, flow_image_path, measurement)
+
+                    # curr_image_path, flow_image_path = imagePath
+                    # flow_image_bgr = cv2.imread(flow_image_path)
+                    curr_image_path, flow_image_path1, flow_image_path2,flow_image_path3, flow_image_path4 = imagePath
+                    flow_image_bgr = (cv2.imread(flow_image_path1) +cv2.imread(flow_image_path2) +cv2.imread(flow_image_path3) +cv2.imread(flow_image_path4) )/4
+
                     curr_image = cv2.imread(curr_image_path)
-                    flow_image_bgr = cv2.imread(flow_image_path)
-                    # flow_image_rgb = cv2.cvtColor(flow_image, cv2.COLOR_BGR2RGB)
                     curr_image = cv2.cvtColor(curr_image, cv2.COLOR_BGR2RGB)
 
                 else:
@@ -82,8 +87,12 @@ def generatorData(samples, batch_size=32, type=TYPE_FLOW_PRECOMPUTED):
                     flow_image_bgr = convertToOptical(prev_image, curr_image)
                     curr_image = cv2.cvtColor(curr_image, cv2.COLOR_BGR2RGB)
 
-                # combined_image = 0.3*curr_image + 1.5*flow_image_bgr
-                combined_image = flow_image_bgr
+
+                combined_image = 0.1*curr_image + flow_image_bgr
+                #CHOOSE IF WE WANT TO TEST WITH ONLY OPTICAL FLOW OR A COMBINATION OF VIDEO AND OPTICAL FLOW
+                # combined_image = flow_image_bgr
+
+                combined_image = cv2.normalize(combined_image, None, alpha=-1, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
                 combined_image = cv2.resize(combined_image, (0,0), fx=0.5, fy=0.5)
 
                 # im = Image.fromarray(combined_image)
@@ -125,10 +134,10 @@ if __name__ == '__main__':
 
     model = CNNModel()
 
-    callbacks = [EarlyStopping(monitor='val_loss', patience=6),
+    callbacks = [EarlyStopping(monitor='val_loss', patience=2),
              ModelCheckpoint(filepath='best'+MODEL_NAME+'.h5', monitor='val_loss', save_best_only=True)]
 
-    model_object = model.fit_generator(training_generator, samples_per_epoch= \
+    history_object = model.fit_generator(training_generator, samples_per_epoch= \
                      len(train_samples)//BATCH_SIZE, validation_data=validation_generator, \
                      validation_steps=len(validation_samples)//BATCH_SIZE, callbacks=callbacks, epochs=EPOCH, verbose=1)
 
@@ -140,16 +149,10 @@ if __name__ == '__main__':
     print('Validation Loss')
     print(history_object.history['val_loss'])
 
-    print('Saving model...')
-    model.save(MODEL_NAME+".h5")
-
-    with open(MODEL_NAME+".json", "w") as json_file:
-      json_file.write(model.to_json())
-    print("Model Saved.")
 
     plt.figure(figsize=[10,8])
-    plt.plot(np.arange(1, EPOCH+1), history_object.history['loss'],'r',linewidth=3.0)
-    plt.plot(np.arange(1, EPOCH+1), history_object.history['val_loss'],'b',linewidth=3.0)
+    plt.plot(np.arange(1, len(history_object.history['loss'])+1), history_object.history['loss'],'r',linewidth=3.0)
+    plt.plot(np.arange(1, len(history_object.history['val_loss'])+1), history_object.history['val_loss'],'b',linewidth=3.0)
     plt.legend(['Training loss', 'Validation Loss'],fontsize=18)
     plt.xlabel('Epochs ',fontsize=16)
     plt.ylabel('Loss',fontsize=16)
