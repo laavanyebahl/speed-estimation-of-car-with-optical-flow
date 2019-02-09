@@ -3,23 +3,23 @@
 The aim of  this project is to predict the speed of a moving car with just a front facing dashboard camera.
 The video is challenging because of the lighting conditions. 
 
-The input looks like this:
-![in](/output/in.gif)
+The input looks like this:    
+![in](/output/input.gif)
 
 
-First one can think of a general approach of training a CNN with the images and the labeled data. But, then if we train with the original frame from the video for regression and predicting the speed, the model will simply overfit, because it will try to memorize evry image with a speed value. 
+First one can think of a general approach of training a CNN with the images and the labeled data. But, then if we train with the original frame from the video for regression and predicting the speed, the model will simply overfit, because it will try to memorize every image with a speed value since there aren't any common general features to associate speed with.
 
-In order to make find a useful input feature to train on, we look into optical flow.
+In order to make a useful input feature to train on, we look into optical flow.
 
 # Optical Flow
-Optical flow takes in two consecutive frames of a video in grayscale and gives out a matrix with the same dimesnion as the input image, with each pixel denoting the change in its position compared to the previous frame. 
+Optical flow takes in two consecutive frames of a video in grayscale and gives out a matrix with the same dimensions as the input image, with each pixel denoting the change in its position compared to the previous frame. 
 
-The direction/ orientation and magnitude at every pielof the optical flow can be stored by using the HSV color channel. 
+The direction/ orientation and magnitude at every pixel of the optical flow can be stored by using the HSV color channel. 
 
-By training the network with optical flow, the network learns wich pixels of the optical flow are important and weight tem accordingly.
+By training the network with optical flow, the network learns which pixels of the optical flow are important and weigh them accordingly.
 
-The file **frames_to_opticalFlow.py** is used to generate an optical flow image from two consecutive frames.
-
+The file **frames_to_opticalFlow.py** is used to generate a dense optical flow image from two consecutive frames using the 
+openCV function ```cv2.calcOpticalFlowFarneback()```.   
 The optical flow looks like this:
 
 ![flow](/output/flow.gif)
@@ -31,12 +31,12 @@ I wrote the following 2 programs :
 
 # Training
 
-3 efforts were made to train the network:
-* **Train using only original video frame:** Network gave good loss, but there was a lot of difference between loss an validation loss. the network seems to overfit and memorize the images.
+3 efforts were made to train the network:   
+* **Train using only original video frames:** Network gave good loss, but there was a lot of difference between loss an validation loss. the network seems to overfit and memorize the images.
 * **Train using only optical flow frame:** Network gave very good loss, but required more EPOCHS
-* **Train using only original video + optical flow frame (0.1 x original_video  + optical_flow):** The newtork gave the least loss and leat EPOCHS.
+* **Train using both original video + optical flow frame (0.1 x original_video  + optical_flow):** The newtork gave the least loss and least EPOCHS.
 
-
+2nd approach gives the most realistic resuts on the test video.
 
 __Model__
 
@@ -76,10 +76,10 @@ We take 4 consecutive images and calculate the average optical flow to remove an
 
 In **train_model.py:** we have the following two functions:
 * prepareData() :  Stores the paths of 4 consecutive optical flow frames + the path of the original frame
-* generateData() :  Generator funciton which loads the images from the path, makes a single train image from 4 consecutives frames and orginal image and feeds it into the network in batches by using yield
+* generateData() :  Generator funciton which loads the images from the path, makes a single train image from 4 consecutive frames and orginal image and feeds it into the network in batches by using yield.
 
 __Data Augmentation__  
-In the generateData() function we double the data for training by simply flipping the combined ttrain images and adding it in the batch along with the same label.
+In the generateData() function we double the data for training by simply flipping the train images and adding it in the batch along with the same label.
 
 __Training Log and Graph__   
 
@@ -115,21 +115,26 @@ Training model complete...
 
 ![graph](/output/graph.png)
 
+__Early stopping__
+
+I used the keras eraly stopping feature to stop the network when it starts overfitting.
+I define the patience as 2. That means it looks for 2 more epochs for improvement in validationn loss otherwise it stops the training if it does not improve and saves the model with the best validation loss.
+Here, the network is stopped at 13th epoch.
+
+
 
 # Testing 
 For testing we convert to Optical flow on the go and take the average of the previous four frames to remove outliers and predict the speed for each such frame.
 
-# Early stopping   
+The program saves the predicted labels in test.py as well as outputs two videos : test video with predicted label on it and a combined optical flow + test video as shown at the end.
 
-I used the kears eraly stopping feature to stop the network when it starts overfirring.
-I define the patience as 3. That means it looks for 3 more epochs for improvement in validationn loss other wise it stops the trainign if it does not improvve and saves the mode with the best validatoin loss.
-Here, the network is stopped at 13th epoch.
 
 # Output visualization
-We can see the optical glow overlayed on th prigin al video image  below.
+We can see the output video and the optical flow overlayed on the original video image  below.
 
 ![out](/output/out.gif)
-![out_opt](/output/out_opt.gif)
+
+![out_opt](/output/out_flow.gif)
 
 
 
