@@ -115,15 +115,19 @@ Training model complete...
 
 ![graph](/output/graph.png)
 
-
-# Testing 
-For testing we convert to Optical flow on the go and take the average of the previous four frames to remove outliers and predict the speed for each such frame.
-
-# Early stopping   
+__Early stopping__
 
 I used the keras eraly stopping feature to stop the network when it starts overfitting.
 I define the patience as 2. That means it looks for 2 more epochs for improvement in validationn loss otherwise it stops the training if it does not improve and saves the model with the best validation loss.
 Here, the network is stopped at 13th epoch.
+
+
+
+# Testing 
+For testing we convert to Optical flow on the go and take the average of the previous four frames to remove outliers and predict the speed for each such frame.
+
+The program saves the predicted labels in test.py as well as outputs two videos : test video with predicted label on it and a combined optical flow + test video as shown at the end.
+
 
 # Output visualization
 We can see the output video and the optical flow overlayed on the original video image  below.
