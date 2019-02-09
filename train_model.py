@@ -30,8 +30,8 @@ TYPE_ORIGINAL = 1
 BATCH_SIZE = 128
 EPOCH = 50
 
-# MODEL_NAME = 'CNNModel_flow'
-MODEL_NAME = 'CNNModel_combined'
+MODEL_NAME = 'CNNModel_flow'
+# MODEL_NAME = 'CNNModel_combined'
 
 
 def prepareData(labels_path, images_path, flow_images_path, type=TYPE_FLOW_PRECOMPUTED):
@@ -90,7 +90,7 @@ def generatorData(samples, batch_size=32, type=TYPE_FLOW_PRECOMPUTED):
 
                 combined_image = 0.1*curr_image + flow_image_bgr
                 #CHOOSE IF WE WANT TO TEST WITH ONLY OPTICAL FLOW OR A COMBINATION OF VIDEO AND OPTICAL FLOW
-                # combined_image = flow_image_bgr
+                combined_image = flow_image_bgr
 
                 combined_image = cv2.normalize(combined_image, None, alpha=-1, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
                 combined_image = cv2.resize(combined_image, (0,0), fx=0.5, fy=0.5)
@@ -134,7 +134,7 @@ if __name__ == '__main__':
 
     model = CNNModel()
 
-    callbacks = [EarlyStopping(monitor='val_loss', patience=2),
+    callbacks = [EarlyStopping(monitor='val_loss', patience=3),
              ModelCheckpoint(filepath='best'+MODEL_NAME+'.h5', monitor='val_loss', save_best_only=True)]
 
     history_object = model.fit_generator(training_generator, samples_per_epoch= \

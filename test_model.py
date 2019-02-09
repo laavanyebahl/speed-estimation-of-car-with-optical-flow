@@ -18,8 +18,8 @@ TYPE_FLOW_PRECOMPUTED = 0
 TYPE_ORIGINAL = 1
 
 
-# MODEL_NAME = 'CNNModel_flow'
-MODEL_NAME = 'CNNModel_combined'
+MODEL_NAME = 'CNNModel_flow'
+# MODEL_NAME = 'CNNModel_combined'
 
 PRE_TRAINED_WEIGHTS = './best'+MODEL_NAME+'.h5'
 
@@ -72,8 +72,8 @@ def predict_from_video(video_input_path, original_video_output_path, combined_vi
         combined_image_save = 0.1*curr_image + flow_image_bgr
 
         #CHOOSE IF WE WANT TO TEST WITH ONLY OPTICAL FLOW OR A COMBINATION OF VIDEO AND OPTICAL FLOW
-        # combined_image = flow_image_bgr
-        combined_image = combined_image_save
+        combined_image = flow_image_bgr
+        # combined_image = combined_image_save
 
         combined_image_test = cv2.normalize(combined_image, None, alpha=-1, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
@@ -93,10 +93,10 @@ def predict_from_video(video_input_path, original_video_output_path, combined_vi
         # print(combined_image.shape, np.mean(flow_image_bgr), prediction[0][0])
 
         cv2.putText(next_frame, str(prediction[0][0]), place, font, fontScale,fontColor,lineType)
-        cv2.putText(combined_image, str(prediction[0][0]), place, font, fontScale,fontColor,lineType)
+        cv2.putText(combined_image_save, str(prediction[0][0]), place, font, fontScale,fontColor,lineType)
 
         video_writer.write(next_frame)
-        video_writer_combined.write(combined_image.astype('uint8'))
+        video_writer_combined.write(combined_image_save.astype('uint8'))
 
         prev_frame = next_frame
         flow_image_bgr_prev4 = flow_image_bgr_prev3
